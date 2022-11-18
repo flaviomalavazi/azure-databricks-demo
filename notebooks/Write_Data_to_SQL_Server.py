@@ -63,7 +63,7 @@ create_last_etl_table = """CREATE TABLE [dbo].[etl_timestamp](
 # COMMAND ----------
 
 try:
-    rs = engine.connect().execute(create_maintenance_header_table).fetchall()
+    rs = engine.connect().execute(create_maintenance_header_table)
     print(rs)
     maintenance_header_table_rows = engine.connect().execute("select count(1) from dbo.maintenance_header").fetchone()[0]
 except Exception as e:
@@ -76,7 +76,7 @@ except Exception as e:
 # COMMAND ----------
 
 try:
-    rs = engine.connect().execute(create_power_output_table).fetchall()
+    rs = engine.connect().execute(create_power_output_table)
     print(rs)
     power_output_table_rows = engine.connect().execute("select count(1) from dbo.power_output").fetchone()[0]
 except Exception as e:
@@ -89,7 +89,7 @@ except Exception as e:
 # COMMAND ----------
 
 try:
-    rs = engine.connect().execute(create_last_etl_table).fetchall()
+    rs = engine.connect().execute(create_last_etl_table)
     print(rs)
     last_etl_table_rows = engine.connect().execute("select count(1) from dbo.etl_timestamp").fetchone()[0]
 except Exception as e:

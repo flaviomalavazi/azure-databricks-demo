@@ -7,6 +7,7 @@ resource "azurerm_key_vault" "demo_key_vault" {
   enabled_for_disk_encryption = true
   purge_protection_enabled    = false
   sku_name                    = "standard"
+  tags                        = local.tags
 }
 
 resource "azurerm_key_vault_access_policy" "user_access_to_key_vault" {
@@ -15,7 +16,7 @@ resource "azurerm_key_vault_access_policy" "user_access_to_key_vault" {
   object_id    = data.azurerm_client_config.current_environment_config.object_id
 
   key_permissions = [
-    "Get",
+    "Get", "List",
   ]
 
   secret_permissions = [
@@ -23,7 +24,7 @@ resource "azurerm_key_vault_access_policy" "user_access_to_key_vault" {
   ]
 
   storage_permissions = [
-    "Get",
+    "Get", "List",
   ]
 }
 
@@ -42,6 +43,10 @@ resource "azurerm_key_vault_access_policy" "adf_access_to_key_vault" {
 
   storage_permissions = [
     "Get", "List",
+  ]
+
+  depends_on = [
+    resource.azurerm_data_factory.demo_data_factory
   ]
 }
 
@@ -68,6 +73,20 @@ resource "azurerm_key_vault_secret" "tenant_id" {
 resource "azurerm_key_vault_secret" "resource_group_name" {
   name         = "resource-group-name"
   value        = resource.azurerm_resource_group.rg.name
+  key_vault_id = azurerm_key_vault.demo_key_vault.id
+  depends_on   = [azurerm_key_vault.demo_key_vault]
+}
+
+resource "azurerm_key_vault_secret" "azuread_application_id" {
+  name         = "azure-ad-application-id"
+  value        = resource.azuread_application.demo_azuread_writing_application.application_id
+  key_vault_id = azurerm_key_vault.demo_key_vault.id
+  depends_on   = [azurerm_key_vault.demo_key_vault]
+}
+
+resource "azurerm_key_vault_secret" "azuread_application_client_secret" {
+  name         = "azure-id-authentication-key"
+  value        = resource.azuread_application_password.demo_azuread_writing_application_secret.value
   key_vault_id = azurerm_key_vault.demo_key_vault.id
   depends_on   = [azurerm_key_vault.demo_key_vault]
 }

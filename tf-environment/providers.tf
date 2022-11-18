@@ -27,6 +27,12 @@ terraform {
       source  = "hashicorp/random"
       version = "3.4.1"
     }
+
+    time = {
+      source  = "hashicorp/time"
+      version = "0.9.1"
+    }
+
     databricks = {
       source  = "databricks/databricks"
       version = "1.5.0"
@@ -53,4 +59,6 @@ provider "databricks" {
 }
 
 # Configure the Azure Active Directory Provider
-# provider "azuread" {}
+provider "azuread" {}
+
+provider "time" {}

@@ -44,7 +44,6 @@ resource "azurerm_mssql_database" "fleet_maintenance_database" {
   name           = var.sql_server_database_name
   server_id      = azurerm_mssql_server.demo_sql_server.id
   collation      = "SQL_Latin1_General_CP1_CI_AS"
-  license_type   = "LicenseIncluded"
   max_size_gb    = 1
   read_scale     = false
   sku_name       = "S1"

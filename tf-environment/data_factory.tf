@@ -6,6 +6,9 @@ resource "azurerm_data_factory" "demo_data_factory" {
     type = "SystemAssigned"
   }
 
+
+  tags = local.tags
+
 }
 
 resource "azurerm_data_factory_linked_service_azure_blob_storage" "linked_service_storage_account_blob" {

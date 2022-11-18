@@ -58,6 +58,8 @@ variable "sql_server_database_name" {
 locals {
   managed_rg                                  = "${var.prefix}-mrg-${random_string.suffix.result}"
   demo_managed_identity                       = "${var.prefix}-managed_identity-${random_string.suffix.result}"
+  demo_ad_app_name                            = "${var.prefix}-adls-adapp-${random_string.suffix.result}"
+  azuread_application_role_permissions_name   = "${var.prefix}-adls-adapp-${random_string.suffix.result}-role"
   demo_key_vault_name                         = "keyvault-${random_string.suffix.result}"
   databricks_instance_name                    = "${var.prefix}-${random_string.suffix.result}"
   storage_account_name                        = "adatabricksadls${random_string.suffix.result}"

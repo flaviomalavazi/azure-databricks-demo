@@ -60,7 +60,7 @@ data "databricks_spark_version" "latest_version" {
 resource "databricks_cluster" "first_cluster" {
   cluster_name            = "Demo Cluster"
   spark_version           = data.databricks_spark_version.latest_version.id
-  node_type_id            = "Standard_DS3_v2"  # data.databricks_node_type.smallest.id
+  node_type_id            = "Standard_DS3_v2" # data.databricks_node_type.smallest.id
   depends_on              = [azurerm_databricks_workspace.databricks_demo_workspace]
   data_security_mode      = "NONE"
   autotermination_minutes = 20
