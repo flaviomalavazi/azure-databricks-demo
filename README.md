@@ -3,6 +3,7 @@
 
 ## How to run this demo on your own:
 ---
+
 1- Install Azure-cli
     1b. Run 'az config set extension.use_dynamic_install=yes_without_prompt' to allow installing extensions without prompt.
 2- Install terraform cli
