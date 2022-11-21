@@ -1,8 +1,11 @@
 data "azuread_client_config" "current" {}
 
 resource "azuread_application" "demo_azuread_writing_application" {
-  display_name     = local.demo_ad_app_name
-  owners           = [data.azuread_client_config.current.object_id]
+  display_name = local.demo_ad_app_name
+  owners = [
+    data.azuread_client_config.current.object_id,
+    data.azurerm_client_config.current_environment_config.object_id,
+  ]
   sign_in_audience = "AzureADMyOrg"
 }
 

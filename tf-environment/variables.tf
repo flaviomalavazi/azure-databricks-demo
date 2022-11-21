@@ -28,15 +28,6 @@ variable "prefix" {
 
 data "azurerm_client_config" "current_environment_config" {}
 
-// Variável de ambiente com a subscrição Azure que será utilizada para rodar a demo
-# variable "azure_subscription_id" {}
-
-# // Variável de ambiente com o tenant Azure que será utilizado para rodar a demo
-# variable "azure_tenant_id" {}
-
-// Variável de ambiente com o Object ID do usuário que está autenticado no terraform para rodar a demo
-# variable "azure_user_object_id" {}
-
 // Geração de uma string aleatória para evitar conflitos entre usuários deste template em um mesmo ambiente
 resource "random_string" "suffix" {
   special = false
@@ -69,7 +60,6 @@ locals {
   demo_eventhub_namespace                     = "demo-eh-ns-${random_string.suffix.result}"
   demo_eventhub_name                          = "demo-eventhub-${random_string.suffix.result}"
   demo_sql_server_admin_login                 = "${var.sql_server_administrator_login}${random_string.suffix.result}"
-  demo_sql_server_admin_password              = var.sql_server_administrator_login_password
   demo_sql_server_power_output_table_name     = "dbo.power_output"
   demo_sql_server_turbine_status_table_name   = "dbo.maintenance_header"
   demo_sql_server_last_etl_table_name         = "dbo.etl_timestamp"
