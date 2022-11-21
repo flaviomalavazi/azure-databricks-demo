@@ -55,7 +55,7 @@ if reset_data:
     from functools import reduce
     spark.sql(f"USE CATALOG hive_metastore")
     try:
-        dbutils.fs.rm(varLandingZonePath, True)
+        # dbutils.fs.rm(varLandingZonePath, True) # This is not deleted intentionally, we might want to keep the data extracted by adf and delete the data processed by databricks
         dbutils.fs.rm(streamingPath, True)
         dbutils.fs.rm(delta_tables_root_path, True)
         dbutils.fs.rm(checkpoints_root_path, True)

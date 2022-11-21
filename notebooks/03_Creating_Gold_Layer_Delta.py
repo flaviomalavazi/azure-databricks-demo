@@ -105,30 +105,3 @@ while True:
 # COMMAND ----------
 
 spark.sql(f"select * from {target_database}.turbine_gold").display()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC 
-# MAGIC #Write gold table to Synapse Dedicated SQL Pool
-
-# COMMAND ----------
-
-# DBTITLE 1,Writing the Data to Azure Synapse
-# Use COPY INTO for faster loads to Synapse from Databricks
-spark.conf.set("spark.databricks.sqldw.writeSemantics", "copy") 
-
-write_to_synapse = (
-  spark.readStream
-    .format('delta')
-    .option('ignoreChanges',True)
-    .table(f'{target_database}.turbine_gold')                                   # Read in Gold turbine data from Delta as a stream
-    .writeStream
-    .format("com.databricks.spark.sqldw")                                       # Write to Synapse (SQL DW connector)
-    .option("url", JDBC_URL)                                                    # SQL Pool JDBC connection (with SQL Auth) string
-    .option("tempDir", SYNAPSE_PATH)                                            # Temporary ADLS path to stage the data (with forwarded permissions)
-    .option("forwardSparkAzureStorageCredentials", "true")
-    .option("dbTable", f"{target_database}.turbine_gold")                       # Table in Synapse to write to
-    .option("checkpointLocation", CHECKPOINT_PATH_SYNAPSE + "turbine_gold")     # Checkpoint for resilient streaming
-    .start()
-)

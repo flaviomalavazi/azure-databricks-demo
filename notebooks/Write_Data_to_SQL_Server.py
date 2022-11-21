@@ -53,7 +53,6 @@ create_power_output_table = """CREATE TABLE [dbo].[power_output](
 );
 """
 
-
 create_last_etl_table = """CREATE TABLE [dbo].[etl_timestamp](
 	[TableName] [varchar](50) NULL,
 	[LastETLRunTime] [datetime] NULL
@@ -66,6 +65,7 @@ try:
     rs = engine.connect().execute(create_maintenance_header_table)
     print(rs)
     maintenance_header_table_rows = engine.connect().execute("select count(1) from dbo.maintenance_header").fetchone()[0]
+    print(f"There are {maintenance_header_table_rows} rows on the table")
 except Exception as e:
     if "[42S01] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]There is already an object named 'maintenance_header' in the database." in str(e):
         maintenance_header_table_rows = engine.connect().execute("select count(1) from dbo.maintenance_header").fetchone()[0]
@@ -79,6 +79,7 @@ try:
     rs = engine.connect().execute(create_power_output_table)
     print(rs)
     power_output_table_rows = engine.connect().execute("select count(1) from dbo.power_output").fetchone()[0]
+    print(f"There are {power_output_table_rows} rows on the table")
 except Exception as e:
     if "[42S01] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]There is already an object named 'power_output' in the database." in str(e):
         power_output_table_rows = engine.connect().execute("select count(1) from dbo.power_output").fetchone()[0]
@@ -92,6 +93,7 @@ try:
     rs = engine.connect().execute(create_last_etl_table)
     print(rs)
     last_etl_table_rows = engine.connect().execute("select count(1) from dbo.etl_timestamp").fetchone()[0]
+    print(f"There are {last_etl_table_rows} rows on the table")
 except Exception as e:
     if "[42S01] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]There is already an object named 'etl_timestamp' in the database." in str(e):
         last_etl_table_rows = engine.connect().execute("select count(1) from dbo.etl_timestamp").fetchone()[0]
@@ -124,24 +126,39 @@ delta = (datetime.today() + timedelta(days=days_ahead)) - begin_date
 # COMMAND ----------
 
 maintenances = []
+maintenance_block = []
+j = 0
 
 for days_to_add in range(delta.days + 1):
     day = datetime.strftime((begin_date + timedelta(days=days_to_add)), "%Y-%m-%d")
     for turbine in turbines:
         maintenances.append(f"""INSERT [dbo].[maintenance_header] ([deviceId], [date], [maintenance]) VALUES (N'{turbine}', CAST(N'{day}' AS Date), {choice([0, 0, 0, 0, 0, 0, 0, 1])})""")
+        if j < 99:
+            j = j + 1
+        else:
+            maintenances.append(";")
+            maintenance_block.append("\n".join(maintenances))
+            maintenances = []
+            j = 0
+            
+if j != 0:
     maintenances.append(";")
-
-maintenances = "\n".join(maintenances)
+    maintenance_block.append("\n".join(maintenances))
+    maintenances = []
+    j = 0
 
 # COMMAND ----------
 
-if maintenance_header_table_rows == 0:
-    rs = engine.connect().execute(maintenances)
-    print(rs)
+if maintenance_header_table_rows < 980:
+    for block in maintenance_block:
+        rs = engine.connect().execute(block)
+        print(rs)
 
 # COMMAND ----------
 
 measurements = []
+measurements_block = []
+j = 0
 
 for days_to_add in range(delta.days + 1):
     day = datetime.strftime((begin_date + timedelta(days=days_to_add)), "%Y-%m-%d")
@@ -149,15 +166,31 @@ for days_to_add in range(delta.days + 1):
         window = datetime.strftime(begin_date, f"{day}T{str(hour).zfill(2)}:00:00.000")
         for turbine in turbines:
             measurements.append(f"""INSERT [dbo].[power_output] ([deviceId], [date], [window], [power]) VALUES (N'{turbine}', CAST(N'{day}' AS Date), CAST(N'{window}' AS DateTime), {str(round(randrange(0,300)+random(),5))})""")
+            if j < 99:
+                j = j + 1
+            else:
+                measurements.append(";")
+                measurements_block.append("\n".join(measurements))
+                measurements = []
+                j = 0
+            
+if j != 0:
     measurements.append(";")
+    measurements_block.append("\n".join(measurements))
+    measurements = []
+    j = 0
 
-measurements = "\n".join(measurements)
+# COMMAND ----------
+
+power_output_table_rows = engine.connect().execute("select count(1) from dbo.power_output").fetchone()[0]
+print(f"There are {power_output_table_rows} rows on the table")
 
 # COMMAND ----------
 
 if power_output_table_rows == 0:
-    rs = engine.connect().execute(measurements)
-    print(rs)
+    for block in measurements_block:
+        rs = engine.connect().execute(block)
+        print(rs)
 
 # COMMAND ----------
 
