@@ -54,6 +54,7 @@ resource "azurerm_key_vault_access_policy" "adf_access_to_key_vault" {
 resource "random_password" "sql_server_admin_password" {
   length  = 32
   special = true
+  override_special = "!#$&=+"
 }
 
 resource "azurerm_key_vault_secret" "subscription_id" {

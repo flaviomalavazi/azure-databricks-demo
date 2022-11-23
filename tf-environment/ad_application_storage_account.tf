@@ -23,6 +23,10 @@ resource "azuread_application_password" "demo_azuread_writing_application_secret
 resource "azuread_service_principal" "azuread_application_service_principal" {
   application_id               = resource.azuread_application.demo_azuread_writing_application.application_id
   app_role_assignment_required = false
+  owners = [
+    data.azuread_client_config.current.object_id,
+    data.azurerm_client_config.current_environment_config.object_id,
+  ]
 }
 
 resource "azurerm_role_assignment" "azuread_application_role_assingment_storage_acount_contributor" {
