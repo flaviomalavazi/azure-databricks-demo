@@ -120,24 +120,24 @@ spark.sql(f"CREATE TABLE IF NOT EXISTS {target_database}.weather_raw USING DELTA
 
 # Create functions to merge turbine and weather data into their target Delta tables
 def merge_delta(incremental, target): 
-  incremental.dropDuplicates(['date','window','deviceid']).createOrReplaceTempView("incremental")
+    incremental.dropDuplicates(['date','window','deviceid']).createOrReplaceTempView("incremental")
   
-  try:
-    # MERGE records into the target table using the specified join key
-    incremental._jdf.sparkSession().sql(f"""
-      MERGE INTO delta.`{target}` t
-      USING incremental i
-      ON i.date=t.date AND i.window = t.window AND i.deviceId = t.deviceid
-      WHEN MATCHED THEN UPDATE SET *
-      WHEN NOT MATCHED THEN INSERT *
-    """)
-  except:
-    # If the †arget table does not exist, create one
-    incremental.write.format("delta").partitionBy("date").save(target)
+    try:
+        # MERGE records into the target table using the specified join key
+        incremental._jdf.sparkSession().sql(f"""
+          MERGE INTO delta.`{target}` t
+          USING incremental i
+          ON i.date=t.date AND i.window = t.window AND i.deviceId = t.deviceid
+          WHEN MATCHED THEN UPDATE SET *
+          WHEN NOT MATCHED THEN INSERT *
+        """)
+    except:
+        # If the †arget table does not exist, create one
+        incremental.write.format("delta").partitionBy("date").save(target)
     
 turbine_bronze_to_silver = (
   spark.readStream.format('delta').table(f"{target_database}.turbine_sensor_raw")
-    .withColumn("window", F.window("timestamp", "5 minutes")["start"])
+    .withColumn("window", F.window("timestamp", "1 hour")["start"])
     .groupby("date", "window", "deviceId")
     .agg(
       F.avg("rpm").alias("rpm"), 
@@ -152,7 +152,7 @@ turbine_bronze_to_silver = (
 
 weather_bronze_to_silver = (
   spark.readStream.format('delta').table(f"{target_database}.weather_raw")
-  .withColumn("window", F.window("timestamp", "5 minutes")["start"])
+  .withColumn("window", F.window("timestamp", "1 hour")["start"])
   .groupby("date", "window", "deviceId")
   .agg(
       F.avg("temperature").alias("temperature"), 
@@ -198,4 +198,5 @@ spark.sql(f"select * from {target_database}.turbine_sensor_agg").display()
 spark.sql(f"select * from {target_database}.weather_agg").display()
 
 # COMMAND ----------
+
 

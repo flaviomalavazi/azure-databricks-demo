@@ -53,9 +53,13 @@ INNER JOIN maintenance_header_streaming maint
   and sensor.deviceid = maint.deviceid
 INNER JOIN power_output_streaming power
   ON sensor.`date` = power.`date`
-  AND sensor.`window` = to_timestamp(power.`window`, 'yyyy-MM-dd H:mm:ss')
+  AND sensor.`window` = power.`window`
   AND sensor.deviceid = power.deviceid
 """)
+
+# COMMAND ----------
+
+display(spark.sql("select * from power_output_streaming"))
 
 # COMMAND ----------
 
