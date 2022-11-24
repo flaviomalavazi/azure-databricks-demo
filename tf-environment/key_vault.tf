@@ -52,8 +52,8 @@ resource "azurerm_key_vault_access_policy" "adf_access_to_key_vault" {
 
 #Create KeyVault SQL Admin password
 resource "random_password" "sql_server_admin_password" {
-  length  = 32
-  special = true
+  length           = 32
+  special          = true
   override_special = "!#$&=+"
 }
 
@@ -120,6 +120,16 @@ resource "azurerm_key_vault_secret" "storage_account_name" {
 resource "azurerm_key_vault_secret" "storage_account_secret_key" {
   name         = "storage-account-key"
   value        = resource.azurerm_storage_account.demo_storage_account.primary_access_key
+  key_vault_id = azurerm_key_vault.demo_key_vault.id
+  depends_on = [
+    resource.azurerm_key_vault_access_policy.user_access_to_key_vault,
+    resource.azurerm_key_vault_access_policy.adf_access_to_key_vault,
+  ]
+}
+
+resource "azurerm_key_vault_secret" "storage_account_sas_token" {
+  name         = "storage-account-sas-token"
+  value        = replace(data.azurerm_storage_account_sas.sas_for_storage_account.sas, "?", "")
   key_vault_id = azurerm_key_vault.demo_key_vault.id
   depends_on = [
     resource.azurerm_key_vault_access_policy.user_access_to_key_vault,
