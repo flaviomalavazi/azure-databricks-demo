@@ -11,4 +11,5 @@
 5. Run a terraform plan on the folder tf-environment, make sure it works properly (no authentication errors)
 6. Run a Terraform Apply, the first apply will not work for the IOT device, but it should work perfectly on the second one
 7. After the second apply, the demo should be ready to roll
-
+8. Get the IoT Connection string of your device and replace it on the code `scripts/iot_simulator_code/iot_simulator.js`
+9. Go to [Azure's IoT simulator and add the code](https://azure-samples.github.io/raspberry-pi-web-simulator/)
