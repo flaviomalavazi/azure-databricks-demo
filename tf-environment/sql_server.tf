@@ -26,6 +26,13 @@ resource "azurerm_mssql_firewall_rule" "mssql_firewall_rule_allow_my_ip" {
   end_ip_address   = var.my_ip_range[1]
 }
 
+resource "azurerm_mssql_firewall_rule" "mssql_firewall_rule_allow_my_ip_2" {
+  name             = "AllowMyIpRange"
+  server_id        = azurerm_mssql_server.demo_sql_server.id
+  start_ip_address = var.my_ip_range[2]
+  end_ip_address   = var.my_ip_range[3]
+}
+
 /* 
   Permitindo que recursos da própria Azure também acessem 
   o SQL Server - Isto é importante pois faremos a escrita dos dados 
