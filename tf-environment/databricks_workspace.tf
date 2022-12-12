@@ -58,12 +58,14 @@ data "databricks_spark_version" "latest_version" {
 }
 
 resource "databricks_cluster" "first_cluster" {
-  cluster_name            = "Demo Cluster"
-  spark_version           = data.databricks_spark_version.latest_version.id
-  node_type_id            = "Standard_DS4_v2" # data.databricks_node_type.smallest.id
-  depends_on              = [azurerm_databricks_workspace.databricks_demo_workspace]
-  data_security_mode      = "NONE"
-  autotermination_minutes = 20
+  cluster_name                = "Demo Cluster"
+  spark_version               = data.databricks_spark_version.latest_version.id
+  node_type_id                = "Standard_DS4_v2" # data.databricks_node_type.smallest.id
+  depends_on                  = [azurerm_databricks_workspace.databricks_demo_workspace]
+  policy_id                   = resource.databricks_cluster_policy.default_data_access_policy.id
+  apply_policy_default_values = true
+  data_security_mode          = "NONE"
+  autotermination_minutes     = 120
   autoscale {
     min_workers = 1
     max_workers = 5
@@ -116,6 +118,15 @@ resource "databricks_notebook" "foreach_python" {
   ]
 }
 
+resource "databricks_notebook" "foreach_dlt" {
+  for_each = fileset("../Delta_Live_Tables/", "*.py")
+  source   = "../Delta_Live_Tables/${each.value}"
+  path     = "${data.databricks_current_user.me.home}/DLT_Demo/${replace(each.value, ".py", "")}"
+  depends_on = [
+    azurerm_databricks_workspace.databricks_demo_workspace
+  ]
+}
+
 resource "databricks_secret_scope" "databricks_secret_scope_kv_managed" {
   name = "keyvault-managed-secret-scope"
 
@@ -123,4 +134,41 @@ resource "databricks_secret_scope" "databricks_secret_scope_kv_managed" {
     resource_id = azurerm_key_vault.demo_key_vault.id
     dns_name    = azurerm_key_vault.demo_key_vault.vault_uri
   }
+}
+resource "databricks_cluster_policy" "default_data_access_policy" {
+  name       = "Data-Access-Cluster-Policy"
+  definition = <<JSON
+                          {
+                            "spark_conf.spark.hadoop.fs.azure.account.auth.type.test.dfs.core.windows.net": {
+                              "type": "fixed",
+                              "value": "OAuth",
+                              "hidden": true
+                            },
+                            "spark_conf.spark.hadoop.fs.azure.account.oauth.provider.type.test.dfs.core.windows.net": {
+                              "type": "fixed",
+                              "value": "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider",
+                              "hidden": true
+                            },
+                            "spark_conf.spark.hadoop.fs.azure.account.oauth2.client.id.test.dfs.core.windows.net": {
+                              "type": "fixed",
+                              "value": "{{secrets/keyvault-managed-secret-scope/azure-ad-application-id}}",
+                              "hidden": true
+                            },
+                            "spark_conf.spark.hadoop.fs.azure.account.oauth2.client.secret.test.dfs.core.windows.net": {
+                              "type": "fixed",
+                              "value": "{{secrets/keyvault-managed-secret-scope/azure-id-authentication-key}}",
+                              "hidden": true
+                            },
+                            "spark_conf.spark.hadoop.fs.azure.account.oauth2.client.endpoint.test.dfs.core.windows.net": {
+                              "type": "fixed",
+                              "value": "https://login.microsoftonline.com/{{secrets/keyvault-managed-secret-scope/tenant-id}}/oauth2/token",
+                              "hidden": true
+                            },
+                            "spark_conf.spark.hadoop.fs.azure.account.key.${resource.azurerm_storage_account.demo_storage_account.name}.dfs.core.windows.net": {
+                              "type": "fixed",
+                              "value": "{{secrets/keyvault-managed-secret-scope/storage-account-key}}",
+                              "hidden": true
+                            }
+                          }
+  JSON
 }

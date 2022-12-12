@@ -62,8 +62,8 @@ data "azurerm_storage_account_sas" "sas_for_storage_account" {
     file  = true
   }
 
-  start  = "${resource.time_static.sas_token_start_date.rfc3339}"
-  expiry = "${resource.time_offset.sas_token_expiration_date.rfc3339}"
+  start  = resource.time_static.sas_token_start_date.rfc3339
+  expiry = resource.time_offset.sas_token_expiration_date.rfc3339
   permissions {
     read    = true
     write   = true
