@@ -13,7 +13,7 @@ varApplicationId = dbutils.secrets.get(scope = "keyvault-managed-secret-scope", 
 varAuthenticationKey = dbutils.secrets.get(scope = "keyvault-managed-secret-scope", key = "azure-id-authentication-key")
 varFileSystemName = dbutils.secrets.get(scope = "keyvault-managed-secret-scope", key = "storage-account-general-purpose-container") # ADLS container name
 varEventHubNameSpace = dbutils.secrets.get(scope = "keyvault-managed-secret-scope", key = "eventhub-namespace") # EventHubNamespace
-varEventHubName = dbutils.secrets.get(scope = "keyvault-managed-secret-scope", key = "storage-account-general-purpose-container") # ADLS container name
+varEventHubName = dbutils.secrets.get(scope = "keyvault-managed-secret-scope", key = "eventhub-name") # EventHubName
 
 synapse_storage_container = dbutils.secrets.get(scope = "keyvault-managed-secret-scope", key = "storage-account-synapse-container") # ADLS container name for Synapse Integration
 
@@ -109,76 +109,76 @@ def silver_weather_data():
 
 # COMMAND ----------
 
-@dlt.table
-def silver_agg_weather_data():
+@dlt.view
+def silver_agg_weather_data_vw():
     stream_data = (
                     dlt.read_stream("silver_weather_data")
                     .withWatermark("timestamp", "1 hour")
                     .groupby("date"
-                             , F.date_trunc("hour", F.col("timestamp")).alias("window") # F.window(dlt.read_stream("silver_weather_data").timestamp, "1 hour")
+                             , F.window(F.col("timestamp"), "1 hour").alias("agg_window")
                              , "deviceId"
                             )
                     .agg(
-                            F.avg("temperature").alias("temperature"), 
-                            F.avg("humidity").alias("humidity"),
-                            F.avg("windspeed").alias("windspeed"),
-                            F.last("winddirection").alias("winddirection")
-#                             F.date_trunc("hour", F.min("timestamp")).alias("window")
+                            F.avg("temperature").alias("temperature") 
+                            ,F.avg("humidity").alias("humidity")
+                            ,F.avg("windspeed").alias("windspeed")
+                            ,F.last("winddirection").alias("winddirection")
+                            ,F.date_trunc("hour", F.min(F.col("timestamp"))).alias("window")
                         )
                     .withColumn("watermark", F.current_timestamp())
     )
     return stream_data
         
-# target = "silver_agg_weather_data"
-# source = f"{target}_append"
+target = "silver_agg_weather_data"
+source = f"{target}_vw"
 
-# dlt.create_streaming_live_table(target)
+dlt.create_streaming_live_table(target)
 
-# dlt.apply_changes(
-#   target = target,
-#   source = source,
-#   keys = ["date", "window", "deviceid"],
-#   sequence_by = F.col("watermark"),
-#   stored_as_scd_type = 1
-# )
+dlt.apply_changes(
+  target = target,
+  source = source,
+  keys = ["date", "window", "deviceid"],
+  sequence_by = F.col("watermark"),
+  stored_as_scd_type = 1
+)
 
 # COMMAND ----------
 
-@dlt.table
-def silver_agg_turbine_data():
+@dlt.view
+def silver_agg_turbine_data_vw():
     stream_data = (
                     dlt.read_stream("silver_turbine_data")
                     .withWatermark("timestamp", "1 hour")
                     .groupby("date"
-                             , F.date_trunc("hour", F.col("timestamp")).alias("window")
+                             , F.window(F.col("timestamp"), "1 hour").alias("agg_window")
                              , "deviceId"
                             )
                     .agg(
-                            F.avg("rpm").alias("rpm"), 
-                            F.avg("angle").alias("angle")
-#                             F.date_trunc("hour", F.min("timestamp")).alias("window")
+                            F.avg("rpm").alias("rpm") 
+                            ,F.avg("angle").alias("angle")
+                            ,F.date_trunc("hour", F.min(F.col("timestamp"))).alias("window")
                     )
                     .withColumn("watermark", F.current_timestamp())
     )
     return stream_data
         
-# target = "silver_agg_turbine_data"
-# source = f"{target}_append"
+target = "silver_agg_turbine_data"
+source = f"{target}_vw"
 
-# dlt.create_streaming_live_table(target)
+dlt.create_streaming_live_table(target)
 
-# dlt.apply_changes(
-#   target = target,
-#   source = source,
-#   keys = ["date", "window", "deviceid"],
-#   sequence_by = F.col("watermark"),
-#   stored_as_scd_type = 1
-# )
+dlt.apply_changes(
+  target = target,
+  source = source,
+  keys = ["date", "window", "deviceid"],
+  sequence_by = F.col("watermark"),
+  stored_as_scd_type = 1
+)
 
 # COMMAND ----------
 
-@dlt.table
-def gold_turbine_data():
+@dlt.view
+def gold_turbine_data_vw():
     turbine_sensor = dlt.read_stream("silver_agg_turbine_data").withColumn("hour", F.date_format(F.col("window"), 'H:mm'))
     maintenance = dlt.read_stream("silver_maintenance_data")
     power_output = dlt.read_stream("silver_poweroutput_data")
@@ -191,15 +191,15 @@ def gold_turbine_data():
                  )
     return final_data
     
-# target = "gold_turbine_data"
-# source = f"{target}_vw"
+target = "gold_turbine_data"
+source = f"{target}_vw"
 
-# dlt.create_streaming_live_table(target)
+dlt.create_streaming_live_table(target)
 
-# dlt.apply_changes(
-#   target = target,
-#   source = source,
-#   keys = ["date", "window", "deviceid"],
-#   sequence_by = F.col("watermark"),
-#   stored_as_scd_type = 1
-# )
+dlt.apply_changes(
+  target = target,
+  source = source,
+  keys = ["date", "window", "deviceid"],
+  sequence_by = F.col("watermark"),
+  stored_as_scd_type = 1
+)
