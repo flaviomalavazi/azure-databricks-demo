@@ -220,7 +220,17 @@ resource "azurerm_key_vault_secret" "sql_server_database" {
 
 resource "azurerm_key_vault_secret" "event_hub_name" {
   name         = "eventhub-name"
-  value        = local.demo_eventhub_name
+  value        = resource.azurerm_eventhub.demo_eventhub.name
+  key_vault_id = azurerm_key_vault.demo_key_vault.id
+  depends_on = [
+    resource.azurerm_key_vault_access_policy.user_access_to_key_vault,
+    resource.azurerm_key_vault_access_policy.adf_access_to_key_vault,
+  ]
+}
+
+resource "azurerm_key_vault_secret" "event_hub_namespace" {
+  name         = "eventhub-namespace"
+  value        = resource.azurerm_eventhub_namespace.demo_eventhub_namespace.name
   key_vault_id = azurerm_key_vault.demo_key_vault.id
   depends_on = [
     resource.azurerm_key_vault_access_policy.user_access_to_key_vault,
