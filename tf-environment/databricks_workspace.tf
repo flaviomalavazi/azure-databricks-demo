@@ -172,3 +172,45 @@ resource "databricks_cluster_policy" "default_data_access_policy" {
                           }
   JSON
 }
+
+data "databricks_notebook" "dlt_demo_notebook" {
+  path = "/${data.databricks_current_user.me.home}/DLT_Demo/DLT_Pipeline"
+  format = "SOURCE"
+}
+
+resource "databricks_pipeline" "demo_dlt_pipeline" {
+  name       = "Demo_DLT_Pipeline"
+  storage    = "abfss://${resource.azurerm_storage_container.demo_general_purpose_container.name}@${resource.azurerm_storage_account.demo_storage_account.name}.dfs.core.windows.net/dlt"
+  continuous = true
+  channel    = "preview"
+  target     = "dlt_demo"
+  photon     = false
+  edition    = "advanced"
+  cluster {
+    label     = "default"
+    policy_id = resource.databricks_cluster_policy.default_data_access_policy.id
+    autoscale {
+      min_workers = 1
+      max_workers = 5
+      mode        = "ENHANCED"
+    }
+    custom_tags = {
+      cluster_type = "dlt_demo_pipeline"
+    }
+  }
+
+  cluster {
+    label       = "maintenance"
+    num_workers = 1
+    custom_tags = {
+      cluster_type = "dlt_demo_pipeline_maintenance"
+    }
+  }
+
+  library {
+    notebook {
+      path = data.databricks_notebook.dlt_demo_notebook.path
+    }
+  }
+
+}

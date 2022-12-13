@@ -3,7 +3,7 @@ resource "azurerm_eventhub_namespace" "demo_eventhub_namespace" {
   name                = local.demo_eventhub_namespace
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
-  sku                 = "Basic"
+  sku                 = "Standard"
   tags                = local.tags
 }
 
