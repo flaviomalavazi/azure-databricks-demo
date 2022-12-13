@@ -127,6 +127,15 @@ resource "databricks_notebook" "foreach_dlt" {
   ]
 }
 
+resource "databricks_notebook" "foreach_general_examples" {
+  for_each = fileset("../General_examples/", "*.py")
+  source   = "../General_examples/${each.value}"
+  path     = "${data.databricks_current_user.me.home}/General_examples/${replace(each.value, ".py", "")}"
+  depends_on = [
+    azurerm_databricks_workspace.databricks_demo_workspace
+  ]
+}
+
 resource "databricks_secret_scope" "databricks_secret_scope_kv_managed" {
   name = "keyvault-managed-secret-scope"
 
