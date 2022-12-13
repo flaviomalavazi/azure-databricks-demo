@@ -174,7 +174,7 @@ resource "databricks_cluster_policy" "default_data_access_policy" {
 }
 
 data "databricks_notebook" "dlt_demo_notebook" {
-  path   = "/${data.databricks_current_user.me.home}/DLT_Demo/DLT_Pipeline"
+  path   = "${data.databricks_current_user.me.home}/DLT_Demo/DLT_Pipeline"
   format = "SOURCE"
 }
 
