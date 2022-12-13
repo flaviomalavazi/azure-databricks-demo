@@ -174,18 +174,19 @@ resource "databricks_cluster_policy" "default_data_access_policy" {
 }
 
 data "databricks_notebook" "dlt_demo_notebook" {
-  path = "/${data.databricks_current_user.me.home}/DLT_Demo/DLT_Pipeline"
+  path   = "/${data.databricks_current_user.me.home}/DLT_Demo/DLT_Pipeline"
   format = "SOURCE"
 }
 
 resource "databricks_pipeline" "demo_dlt_pipeline" {
-  name       = "Demo_DLT_Pipeline"
-  storage    = "abfss://${resource.azurerm_storage_container.demo_general_purpose_container.name}@${resource.azurerm_storage_account.demo_storage_account.name}.dfs.core.windows.net/dlt"
-  continuous = true
-  channel    = "preview"
-  target     = "dlt_demo"
-  photon     = false
-  edition    = "advanced"
+  name        = "Demo_DLT_Pipeline"
+  storage     = "abfss://${resource.azurerm_storage_container.demo_general_purpose_container.name}@${resource.azurerm_storage_account.demo_storage_account.name}.dfs.core.windows.net/dlt"
+  target      = "dlt_demo"
+  channel     = "preview"
+  edition     = "advanced"
+  photon      = false
+  continuous  = false
+  development = true
   cluster {
     label     = "default"
     policy_id = resource.databricks_cluster_policy.default_data_access_policy.id
