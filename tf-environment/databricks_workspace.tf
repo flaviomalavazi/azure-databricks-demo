@@ -185,6 +185,9 @@ resource "databricks_cluster_policy" "default_data_access_policy" {
 data "databricks_notebook" "dlt_demo_notebook" {
   path   = "${data.databricks_current_user.me.home}/DLT_Demo/DLT_Pipeline"
   format = "SOURCE"
+  depends_on = [
+    resource.databricks_notebook.foreach_dlt
+  ]
 }
 
 resource "databricks_pipeline" "demo_dlt_pipeline" {
@@ -194,7 +197,7 @@ resource "databricks_pipeline" "demo_dlt_pipeline" {
   channel     = "preview"
   edition     = "advanced"
   photon      = false
-  continuous  = false
+  continuous  = true
   development = true
   cluster {
     label     = "default"
@@ -223,4 +226,18 @@ resource "databricks_pipeline" "demo_dlt_pipeline" {
     }
   }
 
+}
+
+resource "databricks_sql_global_config" "demo_sql_global_config_access_control" {
+  security_policy = "DATA_ACCESS_CONTROL"
+  data_access_config = {
+    "spark.hadoop.fs.azure.account.auth.type" : "OAuth",
+    "spark.hadoop.fs.azure.account.oauth.provider.type" : "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider",
+    "spark.hadoop.fs.azure.account.oauth2.client.id" : "{{secrets/${resource.databricks_secret_scope.databricks_secret_scope_kv_managed.name}/${resource.azurerm_key_vault_secret.azuread_application_id.name}}}",
+    "spark.hadoop.fs.azure.account.oauth2.client.secret" : "{{secrets/${resource.databricks_secret_scope.databricks_secret_scope_kv_managed.name}/${resource.azurerm_key_vault_secret.azuread_application_client_secret.name}}}",
+    "spark.hadoop.fs.azure.account.oauth2.client.endpoint" : "https://login.microsoftonline.com/${data.azurerm_client_config.current_environment_config.tenant_id}/oauth2/token"
+  }
+  sql_config_params = {
+    "ANSI_MODE" : "true"
+  }
 }
