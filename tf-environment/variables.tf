@@ -59,17 +59,17 @@ locals {
   demo_terraform_storage_container_name       = "terraform-state"
   demo_eventhub_namespace                     = "demo-eh-ns-${random_string.suffix.result}"
   demo_eventhub_name                          = "demo-eventhub-${random_string.suffix.result}"
-  demo_sql_server_admin_login                 = "${var.sql_server_administrator_login}${random_string.suffix.result}"
+  demo_sql_server_admin_login                 = "adminstrator${random_string.suffix.result}"
   demo_sql_server_power_output_table_name     = "dbo.power_output"
   demo_sql_server_turbine_status_table_name   = "dbo.maintenance_header"
   demo_sql_server_last_etl_table_name         = "dbo.etl_timestamp"
   databricks_my_username                      = var.my_username // Nome do usuário que será criado no workspace gerido pelo terraform
   tags = {                                                      // Tags para facilitar a governança do seu ambiente
     Environment = "Demo-with-terraform"
-    Owner       = var.my_username_display
-    OwnerEmail  = var.my_username_email
-    KeepUntil   = "2022-11-10"
-    Keep-Until  = "2022-11-10"
+    Owner       = split("@", var.my_username)[0]
+    OwnerEmail  = var.my_username
+    KeepUntil   = "2023-01-31"
+    Keep-Until  = "2022-01-31"
   }
 
 }
