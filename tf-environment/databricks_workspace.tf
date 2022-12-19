@@ -146,6 +146,9 @@ resource "databricks_secret_scope" "databricks_secret_scope_kv_managed" {
 }
 resource "databricks_cluster_policy" "default_data_access_policy" {
   name       = "Data-Access-Cluster-Policy"
+  depends_on = [
+    resource.databricks_secret_scope.databricks_secret_scope_kv_managed
+  ]
   definition = <<JSON
                           {
                             "spark_conf.spark.hadoop.fs.azure.account.auth.type.test.dfs.core.windows.net": {
