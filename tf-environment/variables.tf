@@ -15,7 +15,7 @@ Fique a vontade para alterar os valores defaults das tags indicadas.
 // Região da Azure onde nosso workspace Azure Databricks (e os recursos gerenciados por ele) será criado.
 variable "resource_group_location" {
   type        = string
-  default     = "brazilsouth" // Pode ser alterado
+  default     = "eastus" // Pode ser alterado
   description = "Localização do grupo de recursos."
 }
 
