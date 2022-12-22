@@ -120,7 +120,7 @@ turbines = ["WindTurbine-1",
 
 hour_range = 24
 
-days_to_subtract = 90
+days_to_subtract = 60
 days_ahead = 7
 
 begin_date = datetime.today() - timedelta(days=days_to_subtract)
