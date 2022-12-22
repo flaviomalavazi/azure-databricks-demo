@@ -267,4 +267,8 @@ resource "databricks_sql_endpoint" "demo_sql_warehouse" {
   enable_serverless_compute = true
   auto_stop_mins            = 5
 
+  depends_on = [
+    resource.databricks_sql_global_config.demo_sql_global_config_access_control
+  ]
+
 }
