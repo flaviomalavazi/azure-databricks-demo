@@ -55,6 +55,7 @@ def silver_maintenance_data():
             .options(**cloudfile)
             .option("cloudFiles.schemaLocation", f"{schema_checkpoints_root_path}/turbine_status")
             .load(f"{adf_landing_zone}/status_data")
+            .withColumn("last_update_at", F.current_timestamp())
     )
 
 # COMMAND ----------
@@ -66,6 +67,7 @@ def silver_poweroutput_data():
             .options(**cloudfile)
             .option("cloudFiles.schemaLocation", f"{schema_checkpoints_root_path}/turbine_sensor_data")
             .load(f"{adf_landing_zone}/power_output")
+            .withColumn("last_update_at", F.current_timestamp())
     )
 
 # COMMAND ----------
@@ -113,9 +115,9 @@ def silver_weather_data():
 def silver_agg_weather_data_vw():
     stream_data = (
                     dlt.read_stream("silver_weather_data")
-                    .withWatermark("timestamp", "1 hour")
+                    .withWatermark("timestamp", "10 minutes")
                     .groupby("date"
-                             , F.window(F.col("timestamp"), "1 hour").alias("agg_window")
+                             , F.window(F.col("timestamp"), "10 minutes").alias("agg_window")
                              , "deviceId"
                             )
                     .agg(
@@ -123,9 +125,9 @@ def silver_agg_weather_data_vw():
                             ,F.avg("humidity").alias("humidity")
                             ,F.avg("windspeed").alias("windspeed")
                             ,F.last("winddirection").alias("winddirection")
-                            ,F.date_trunc("hour", F.min(F.col("timestamp"))).alias("window")
+                            ,F.date_trunc("minute", F.expr("from_unixtime(unix_timestamp(min(timestamp)) + ((round(minute(min(timestamp))/10)*10 - minute(min(timestamp))) * 60))")).alias("window") # F.min(F.col("timestamp"))).alias("window")
                         )
-                    .withColumn("watermark", F.current_timestamp())
+                    .withColumn("last_update_at", F.current_timestamp())
     )
     return stream_data
         
@@ -138,7 +140,8 @@ dlt.apply_changes(
   target = target,
   source = source,
   keys = ["date", "window", "deviceid"],
-  sequence_by = F.col("watermark"),
+  except_column_list = ["agg_window"],
+  sequence_by = F.col("last_update_at"),
   stored_as_scd_type = 1
 )
 
@@ -148,17 +151,17 @@ dlt.apply_changes(
 def silver_agg_turbine_data_vw():
     stream_data = (
                     dlt.read_stream("silver_turbine_data")
-                    .withWatermark("timestamp", "1 hour")
+                    .withWatermark("timestamp", "10 minutes")
                     .groupby("date"
-                             , F.window(F.col("timestamp"), "1 hour").alias("agg_window")
+                             , F.window(F.col("timestamp"), "10 minutes").alias("agg_window")
                              , "deviceId"
                             )
                     .agg(
                             F.avg("rpm").alias("rpm") 
                             ,F.avg("angle").alias("angle")
-                            ,F.date_trunc("hour", F.min(F.col("timestamp"))).alias("window")
+                            ,F.date_trunc("minute", F.expr("from_unixtime(unix_timestamp(min(timestamp)) + ((round(minute(min(timestamp))/10)*10 - minute(min(timestamp))) * 60))")).alias("window") # F.min(F.col("timestamp"))).alias("window")
                     )
-                    .withColumn("watermark", F.current_timestamp())
+                    .withColumn("last_update_at", F.current_timestamp())
     )
     return stream_data
         
@@ -171,7 +174,8 @@ dlt.apply_changes(
   target = target,
   source = source,
   keys = ["date", "window", "deviceid"],
-  sequence_by = F.col("watermark"),
+  except_column_list = ["agg_window"],
+  sequence_by = F.col("last_update_at"),
   stored_as_scd_type = 1
 )
 
@@ -187,7 +191,7 @@ def gold_turbine_data_vw():
                   .join(weather.select("date", "window", "temperature", "humidity", "windspeed", "winddirection"), ["date", "window"])
                   .join(maintenance.select("date", "deviceId", "maintenance"), ["date", "deviceId"])
                   .join(power_output.select("date", "window", "deviceId", "power"), ["date", "window", "deviceId"])
-                  .withColumn("watermark", F.current_timestamp())
+                  .withColumn("last_update_at", F.current_timestamp())
                  )
     return final_data
     
@@ -200,6 +204,6 @@ dlt.apply_changes(
   target = target,
   source = source,
   keys = ["date", "window", "deviceid"],
-  sequence_by = F.col("watermark"),
+  sequence_by = F.col("last_update_at"),
   stored_as_scd_type = 1
 )

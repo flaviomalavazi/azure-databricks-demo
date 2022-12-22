@@ -15,7 +15,7 @@ Fique a vontade para alterar os valores defaults das tags indicadas.
 // Região da Azure onde nosso workspace Azure Databricks (e os recursos gerenciados por ele) será criado.
 variable "resource_group_location" {
   type        = string
-  default     = "eastus" // Pode ser alterado
+  default     = "westus" // Pode ser alterado
   description = "Localização do grupo de recursos."
 }
 
@@ -69,7 +69,7 @@ locals {
     Owner       = split("@", var.my_username)[0]
     OwnerEmail  = var.my_username
     KeepUntil   = "2023-01-31"
-    Keep-Until  = "2022-01-31"
+    Keep-Until  = "2023-01-31"
   }
 
 }

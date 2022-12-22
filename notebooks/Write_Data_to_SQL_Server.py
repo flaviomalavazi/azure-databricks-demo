@@ -31,11 +31,12 @@ engine = create_engine("mssql+pyodbc:///?odbc_connect=%s" % params)
 # COMMAND ----------
 
 with engine.connect() as con:
-
+    print("Testing connection with SQL Server...")
     rs = con.execute('SELECT GETDATE() as timestamp_of_now')
 
     for row in rs:
         print(row)
+        print("Connection successfull!")
 
 # COMMAND ----------
 
@@ -103,6 +104,9 @@ except Exception as e:
 
 # COMMAND ----------
 
+import pandas as pd
+from itertools import islice
+
 turbines = ["WindTurbine-1",
             "WindTurbine-2",
             "WindTurbine-3",
@@ -122,6 +126,10 @@ days_ahead = 7
 begin_date = datetime.today() - timedelta(days=days_to_subtract)
 
 delta = (datetime.today() + timedelta(days=days_ahead)) - begin_date
+
+end_date = datetime.strftime((begin_date + timedelta(days=(delta.days+1))), "%Y-%m-%d")
+
+measurement_times = [x for x in pd.date_range(start= pd.Timestamp(begin_date).round('10T'), end = pd.Timestamp(end_date).round('10T'), freq="10T")]
 
 # COMMAND ----------
 
@@ -158,27 +166,28 @@ if maintenance_header_table_rows < 980:
 
 measurements = []
 measurements_block = []
-j = 0
+rows_to_insert = 0
+batch_size = 100
 
-for days_to_add in range(delta.days + 1):
-    day = datetime.strftime((begin_date + timedelta(days=days_to_add)), "%Y-%m-%d")
-    for hour in range(hour_range):
-        window = datetime.strftime(begin_date, f"{day}T{str(hour).zfill(2)}:00:00.000")
-        for turbine in turbines:
-            measurements.append(f"""INSERT [dbo].[power_output] ([deviceId], [date], [window], [power]) VALUES (N'{turbine}', CAST(N'{day}' AS Date), CAST(N'{window}' AS DateTime), {str(round(randrange(0,300)+random(),5))})""")
-            if j < 99:
-                j = j + 1
-            else:
-                measurements.append(";")
-                measurements_block.append("\n".join(measurements))
-                measurements = []
-                j = 0
-            
-if j != 0:
-    measurements.append(";")
-    measurements_block.append("\n".join(measurements))
-    measurements = []
-    j = 0
+for window in measurement_times:
+    for turbine in turbines:
+        measurements.append(f"""INSERT [dbo].[power_output] ([deviceId], [date], [window], [power]) VALUES (N'{turbine}', CAST(N'{datetime.strftime(window, "%Y-%m-%d")}' AS Date), CAST(N'{window}' AS DateTime), {str(round(randrange(0,300)+random(),5))})""")
+        rows_to_insert = rows_to_insert + 1
+        
+i = 0
+big_statement = ""
+list_of_statements = []
+for statement in measurements:
+    if i <= batch_size:
+        big_statement = f"""{big_statement}\n{statement};"""
+        i = i + 1
+    else:
+        list_of_statements.append(f"""{big_statement}\n{statement};""")
+        big_statement = ""
+        i = 0
+
+if big_statement != "":
+    list_of_statements.append(f"""{big_statement};""")
 
 # COMMAND ----------
 
@@ -187,10 +196,17 @@ print(f"There are {power_output_table_rows} rows on the table")
 
 # COMMAND ----------
 
+from time import sleep
+i = 0
 if power_output_table_rows == 0:
-    for block in measurements_block:
-        rs = engine.connect().execute(block)
-        print(rs)
+    print(f"{rows_to_insert} rows will be added to the table")
+    for statement in list_of_statements:
+        rs = engine.connect().execute(statement)
+        sleep(0.2)
+        i = i + 1
+        if (i % int(batch_size/10) == 0):
+            print(f"{i} out of {len(list_of_statements)} blocks written")
+print(f"{i} blocks were written to the database")
 
 # COMMAND ----------
 

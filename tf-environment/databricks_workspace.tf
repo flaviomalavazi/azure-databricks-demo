@@ -61,11 +61,17 @@ resource "databricks_cluster" "first_cluster" {
   cluster_name                = "Demo Cluster"
   spark_version               = data.databricks_spark_version.latest_version.id
   node_type_id                = "Standard_DS4_v2" # data.databricks_node_type.smallest.id
-  depends_on                  = [azurerm_databricks_workspace.databricks_demo_workspace]
   policy_id                   = resource.databricks_cluster_policy.default_data_access_policy.id
   apply_policy_default_values = true
   data_security_mode          = "NONE"
   autotermination_minutes     = 120
+  depends_on = [
+    resource.azurerm_databricks_workspace.databricks_demo_workspace,
+    resource.databricks_cluster_policy.default_data_access_policy,
+    resource.databricks_secret_scope.databricks_secret_scope_kv_managed,
+    resource.azurerm_key_vault_secret.storage_account_secret_key
+  ]
+
   autoscale {
     min_workers = 1
     max_workers = 5
@@ -145,9 +151,10 @@ resource "databricks_secret_scope" "databricks_secret_scope_kv_managed" {
   }
 }
 resource "databricks_cluster_policy" "default_data_access_policy" {
-  name       = "Data-Access-Cluster-Policy"
+  name = "Data-Access-Cluster-Policy"
   depends_on = [
-    resource.databricks_secret_scope.databricks_secret_scope_kv_managed
+    resource.databricks_secret_scope.databricks_secret_scope_kv_managed,
+    resource.azurerm_key_vault_secret.storage_account_secret_key
   ]
   definition = <<JSON
                           {
@@ -189,7 +196,8 @@ data "databricks_notebook" "dlt_demo_notebook" {
   path   = "${data.databricks_current_user.me.home}/DLT_Demo/DLT_Pipeline"
   format = "SOURCE"
   depends_on = [
-    resource.databricks_notebook.foreach_dlt
+    resource.databricks_notebook.foreach_dlt,
+    resource.azurerm_databricks_workspace.databricks_demo_workspace
   ]
 }
 
@@ -202,6 +210,12 @@ resource "databricks_pipeline" "demo_dlt_pipeline" {
   photon      = false
   continuous  = true
   development = true
+  depends_on = [
+    resource.azurerm_databricks_workspace.databricks_demo_workspace,
+    resource.databricks_cluster_policy.default_data_access_policy,
+    resource.databricks_secret_scope.databricks_secret_scope_kv_managed,
+    resource.azurerm_key_vault_secret.storage_account_secret_key
+  ]
   cluster {
     label     = "default"
     policy_id = resource.databricks_cluster_policy.default_data_access_policy.id
@@ -232,7 +246,8 @@ resource "databricks_pipeline" "demo_dlt_pipeline" {
 }
 
 resource "databricks_sql_global_config" "demo_sql_global_config_access_control" {
-  security_policy = "DATA_ACCESS_CONTROL"
+  security_policy           = "DATA_ACCESS_CONTROL"
+  enable_serverless_compute = true
   data_access_config = {
     "spark.hadoop.fs.azure.account.auth.type" : "OAuth",
     "spark.hadoop.fs.azure.account.oauth.provider.type" : "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider",
@@ -242,5 +257,19 @@ resource "databricks_sql_global_config" "demo_sql_global_config_access_control" 
   }
   sql_config_params = {
     "ANSI_MODE" : "true"
+  }
+}
+
+resource "databricks_sql_endpoint" "demo_sql_warehouse" {
+  name                      = "Demo Warehouse"
+  cluster_size              = "Small"
+  max_num_clusters          = 1
+  enable_serverless_compute = true
+  auto_stop_mins            = 5
+
+  tags {
+    custom_tags = {
+      "WarehouseScope" = "Initial Demo"
+    }
   }
 }
