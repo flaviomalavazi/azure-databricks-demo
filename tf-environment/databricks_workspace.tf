@@ -267,9 +267,4 @@ resource "databricks_sql_endpoint" "demo_sql_warehouse" {
   enable_serverless_compute = true
   auto_stop_mins            = 5
 
-  tags {
-    custom_tags = {
-      "WarehouseScope" = "Initial Demo"
-    }
-  }
 }
