@@ -204,7 +204,7 @@ if power_output_table_rows == 0:
         rs = engine.connect().execute(statement)
         sleep(0.2)
         i = i + 1
-        if (i % int(batch_size/10) == 0):
+        if (i % int(batch_size/50) == 0):
             print(f"{i} out of {len(list_of_statements)} blocks written")
 print(f"{i} blocks were written to the database")
 
