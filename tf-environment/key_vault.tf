@@ -147,16 +147,6 @@ resource "azurerm_key_vault_secret" "storage_account_general_purpose_container" 
   ]
 }
 
-resource "azurerm_key_vault_secret" "storage_account_synapse_container" {
-  name         = "storage-account-synapse-container"
-  value        = local.demo_synapse_storage_container_name
-  key_vault_id = azurerm_key_vault.demo_key_vault.id
-  depends_on = [
-    resource.azurerm_key_vault_access_policy.user_access_to_key_vault,
-    resource.azurerm_key_vault_access_policy.adf_access_to_key_vault,
-  ]
-}
-
 resource "azurerm_key_vault_secret" "sql_server_connection_string" {
   name         = "sql-server-connection-string"
   value        = "data source=${resource.azurerm_mssql_server.demo_sql_server.fully_qualified_domain_name};initial catalog=${resource.azurerm_mssql_database.fleet_maintenance_database.name};user id=${local.demo_sql_server_admin_login};Password=${random_password.sql_server_admin_password.result};integrated security=False;encrypt=True;connection timeout=30"

@@ -15,7 +15,7 @@ Fique a vontade para alterar os valores defaults das tags indicadas.
 // Região da Azure onde nosso workspace Azure Databricks (e os recursos gerenciados por ele) será criado.
 variable "resource_group_location" {
   type        = string
-  default     = "brazilsouth" // Pode ser alterado
+  default     = "westus" // Pode ser alterado
   description = "Localização do grupo de recursos."
 }
 
@@ -55,7 +55,6 @@ locals {
   databricks_instance_name                    = "${var.prefix}-${random_string.suffix.result}"
   storage_account_name                        = "adatabricksadls${random_string.suffix.result}"
   demo_general_purpose_storage_container_name = "${var.prefix}-container"
-  demo_synapse_storage_container_name         = "${var.prefix}-synapse"
   demo_terraform_storage_container_name       = "terraform-state"
   demo_eventhub_namespace                     = "demo-eh-ns-${random_string.suffix.result}"
   demo_eventhub_name                          = "demo-eventhub-${random_string.suffix.result}"
@@ -69,7 +68,7 @@ locals {
     Owner       = split("@", var.my_username)[0]
     OwnerEmail  = var.my_username
     KeepUntil   = "2023-01-31"
-    Keep-Until  = "2022-01-31"
+    Keep-Until  = "2023-01-31"
   }
 
 }

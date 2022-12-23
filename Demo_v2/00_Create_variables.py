@@ -3,6 +3,7 @@ dbutils.widgets.dropdown("reset_data", "True", ["True", "False"], "Reset all dat
 reset_data = True if dbutils.widgets.get("reset_data") == "True" else False
 
 # COMMAND ----------
+
 varSubscriptionId = dbutils.secrets.get(scope = "keyvault-managed-secret-scope", key = "subscription-id")
 varTenantId = dbutils.secrets.get(scope = "keyvault-managed-secret-scope", key = "tenant-id")
 varResourceGroupName = dbutils.secrets.get(scope = "keyvault-managed-secret-scope", key = "resource-group-name")
@@ -11,11 +12,11 @@ varStorageAccountAccessKey = dbutils.secrets.get(scope = "keyvault-managed-secre
 varApplicationId = dbutils.secrets.get(scope = "keyvault-managed-secret-scope", key = "azure-ad-application-id")
 varAuthenticationKey = dbutils.secrets.get(scope = "keyvault-managed-secret-scope", key = "azure-id-authentication-key")
 varFileSystemName = dbutils.secrets.get(scope = "keyvault-managed-secret-scope", key = "storage-account-general-purpose-container") # ADLS container name
-synapse_storage_container = dbutils.secrets.get(scope = "keyvault-managed-secret-scope", key = "storage-account-synapse-container") # ADLS container name for Synapse Integration
 varRootBucketPath = f"abfss://{varFileSystemName}@{varStorageAccountName}.dfs.core.windows.net"
 varLandingZonePath = f"abfss://{varFileSystemName}@{varStorageAccountName}.dfs.core.windows.net/landing"
 
 adf_landing_zone = varLandingZonePath
+delta_live_tables_path = f"{varRootBucketPath}/dlt"
 delta_tables_root_path = f"{varRootBucketPath}/delta_tables"
 checkpoints_root_path = f"{varRootBucketPath}/checkPoints"
 schema_checkpoints_root_path = f"{varRootBucketPath}/schemaCheckPoints"
@@ -37,11 +38,6 @@ SILVER_PATH = streamingPath + "silver/"
 GOLD_PATH = streamingPath + "gold/"
 CHECKPOINT_PATH = streamingPath + "checkpoint/"
 
-# JDBC_URL = dbutils.secrets.get(scope="keyvault-managed-secret-scope", key="jdbc_url")
-
-SYNAPSE_PATH = f"abfss://{synapse_storage_container}@{varStorageAccountName}.dfs.core.windows.net/synapse-tmp/"
-CHECKPOINT_PATH_SYNAPSE = f"{varRootBucketPath}/synapse-checkpoint/iot-demo/"
-
 # COMMAND ----------
 
 try:
@@ -55,12 +51,12 @@ if reset_data:
     from functools import reduce
     spark.sql(f"USE CATALOG hive_metastore")
     try:
-        # dbutils.fs.rm(varLandingZonePath, True) # This is not deleted intentionally, we might want to keep the data extracted by adf and delete the data processed by databricks
+#         dbutils.fs.rm(varLandingZonePath, True) # This is not deleted intentionally, we might want to keep the data extracted by adf and delete the data processed by databricks
         dbutils.fs.rm(streamingPath, True)
         dbutils.fs.rm(delta_tables_root_path, True)
         dbutils.fs.rm(checkpoints_root_path, True)
         dbutils.fs.rm(schema_checkpoints_root_path, True)
+        dbutils.fs.rm(delta_live_tables_path, True)
     except Exception as e:
         print(e)
     spark.sql(f"DROP SCHEMA IF EXISTS {target_database} CASCADE")
-
