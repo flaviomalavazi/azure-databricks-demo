@@ -26,12 +26,6 @@ resource "azurerm_storage_container" "demo_general_purpose_container" {
   container_access_type = "private"
 }
 
-resource "azurerm_storage_container" "demo_synapse_container" {
-  name                  = local.demo_synapse_storage_container_name
-  storage_account_name  = azurerm_storage_account.demo_storage_account.name
-  container_access_type = "private"
-}
-
 resource "azurerm_role_assignment" "role_assignment_ad_application" {
   scope                = resource.azurerm_storage_account.demo_storage_account.id
   principal_id         = resource.azurerm_data_factory.demo_data_factory.identity.0.principal_id

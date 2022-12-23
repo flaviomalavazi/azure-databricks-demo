@@ -51,8 +51,8 @@ def silver_maintenance_data():
     return (
         spark.readStream.format("cloudFiles")
             .options(**cloudfile)
-            .option("cloudFiles.schemaLocation", f"{schema_checkpoints_root_path}/turbine_status")
-            .load(f"{adf_landing_zone}/status_data")
+            .option("cloudFiles.schemaLocation", f"{schema_checkpoints_root_path}/maintenance_header_schema_dlt")
+            .load(f"{adf_landing_zone}/dbo/maintenance_header")
             .withColumn("last_update_at", F.current_timestamp())
     )
 
@@ -63,8 +63,8 @@ def silver_poweroutput_data():
     return (
         spark.readStream.format("cloudFiles")
             .options(**cloudfile)
-            .option("cloudFiles.schemaLocation", f"{schema_checkpoints_root_path}/turbine_sensor_data")
-            .load(f"{adf_landing_zone}/power_output")
+            .option("cloudFiles.schemaLocation", f"{schema_checkpoints_root_path}/power_output_schema_dlt")
+            .load(f"{adf_landing_zone}/dbo/power_output")
             .withColumn("last_update_at", F.current_timestamp())
     )
 
@@ -192,4 +192,3 @@ def gold_turbine_data():
                   .withColumn("last_update_at", F.current_timestamp())
                  )
     return final_data
-

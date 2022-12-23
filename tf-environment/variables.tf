@@ -55,7 +55,6 @@ locals {
   databricks_instance_name                    = "${var.prefix}-${random_string.suffix.result}"
   storage_account_name                        = "adatabricksadls${random_string.suffix.result}"
   demo_general_purpose_storage_container_name = "${var.prefix}-container"
-  demo_synapse_storage_container_name         = "${var.prefix}-synapse"
   demo_terraform_storage_container_name       = "terraform-state"
   demo_eventhub_namespace                     = "demo-eh-ns-${random_string.suffix.result}"
   demo_eventhub_name                          = "demo-eventhub-${random_string.suffix.result}"
