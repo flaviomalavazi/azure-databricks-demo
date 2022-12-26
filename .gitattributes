@@ -1,0 +1,4 @@
+# Ignoring our SQL Examples on our files for repo statistics purposes
+
+*.sql linguist-detectable=false
+*.sql linguist-language=sql
