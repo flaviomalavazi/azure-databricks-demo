@@ -20,6 +20,8 @@ crash.*.log
 *.tfvars.json
 creds.tf
 **/creds.tf
+**/demo_keys/*
+id_rsa
 
 # Ignore override files as they are usually used to override resources locally and so
 # are not checked in
