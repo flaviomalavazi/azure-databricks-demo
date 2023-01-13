@@ -10,7 +10,7 @@ resource "azurerm_resource_group" "rg" {
 # Create virtual network
 resource "azurerm_virtual_network" "my_terraform_network" {
   name                = "myVnet"
-  address_space       = ["10.0.0.0/16"]
+  address_space       = ["10.0.0.0/28"]
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 }
@@ -20,7 +20,7 @@ resource "azurerm_subnet" "my_terraform_subnet" {
   name                 = "mySubnet"
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.my_terraform_network.name
-  address_prefixes     = ["10.0.1.0/24"]
+  address_prefixes     = ["10.0.0.8/30"]
 }
 
 # Create public IPs
@@ -95,12 +95,14 @@ resource "tls_private_key" "example_ssh" {
   rsa_bits  = 4096
 
   provisioner "local-exec" {
-    command = "${self.private_key_pem} > ../demo_keys/id_rsa"
+    command = "echo ${self.private_key_pem} > ../demo_keys/id_rsa"
+    on_failure = fail
   }
 
   provisioner "local-exec" {
     when = destroy
     command = "rm ../demo_keys/id_rsa"
+    on_failure = fail
   }
 
 }
