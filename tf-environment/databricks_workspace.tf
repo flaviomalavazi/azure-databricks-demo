@@ -92,6 +92,12 @@ resource "databricks_cluster" "first_cluster" {
   }
 
   library {
+    maven {
+      coordinates = "com.microsoft.azure:spark-mssql-connector_2.12:1.2.0"
+    }
+  }
+
+  library {
     pypi {
       package = "sqlalchemy"
     }

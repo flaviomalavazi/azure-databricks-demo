@@ -7,7 +7,7 @@
 
 # COMMAND ----------
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 import pyodbc
 import urllib
 from datetime import datetime, timedelta
@@ -32,11 +32,11 @@ engine = create_engine("mssql+pyodbc:///?odbc_connect=%s" % params)
 
 with engine.connect() as con:
     print("Testing connection with SQL Server...")
-    rs = con.execute('SELECT GETDATE() as timestamp_of_now')
-
+    rs = con.execute(text('SELECT GETDATE() as timestamp_of_now'))
     for row in rs:
         print(row)
         print("Connection successfull!")
+    con.close()
 
 # COMMAND ----------
 
@@ -63,42 +63,56 @@ create_last_etl_table = """CREATE TABLE [dbo].[etl_timestamp](
 # COMMAND ----------
 
 try:
-    rs = engine.connect().execute(create_maintenance_header_table)
-    print(rs)
-    maintenance_header_table_rows = engine.connect().execute("select count(1) from dbo.maintenance_header").fetchone()[0]
-    print(f"There are {maintenance_header_table_rows} rows on the table")
+    with engine.connect() as con:
+        print("creating table...")
+        rs = con.execute(text(create_maintenance_header_table))
+        con.commit()
+        maintenance_header_table_rows = [row for row in con.execute(text("select count(1) from dbo.maintenance_header"))][0][0]
+        con.close()
+        print(f"There are {maintenance_header_table_rows} rows on the table")
 except Exception as e:
     if "[42S01] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]There is already an object named 'maintenance_header' in the database." in str(e):
-        maintenance_header_table_rows = engine.connect().execute("select count(1) from dbo.maintenance_header").fetchone()[0]
-        print(f"There are {maintenance_header_table_rows} rows on that table already, skipping this step")
+        with engine.connect() as con:
+            maintenance_header_table_rows = [row for row in con.execute(text("select count(1) from dbo.maintenance_header").execution_options(autocommit=True))][0][0]
+            print(f"There are {maintenance_header_table_rows} rows on that table already, skipping this step")
+            print("here")
+            con.close()
     else:
         raise e
 
 # COMMAND ----------
 
 try:
-    rs = engine.connect().execute(create_power_output_table)
-    print(rs)
-    power_output_table_rows = engine.connect().execute("select count(1) from dbo.power_output").fetchone()[0]
-    print(f"There are {power_output_table_rows} rows on the table")
+    with engine.connect() as con:
+        rs = con.execute(text(create_power_output_table))
+        con.commit()
+        power_output_table_rows = [row for row in con.execute(text("select count(1) from dbo.power_output"))][0][0]
+        con.close()
+        print(f"There are {power_output_table_rows} rows on the table")
 except Exception as e:
     if "[42S01] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]There is already an object named 'power_output' in the database." in str(e):
-        power_output_table_rows = engine.connect().execute("select count(1) from dbo.power_output").fetchone()[0]
-        print(f"There are {power_output_table_rows} rows on that table already, skipping this step")
+        with engine.connect() as con:
+            power_output_table_rows = [row for row in con.execute(text("select count(1) from dbo.power_output").execution_options(autocommit=True))][0][0]
+            print(f"There are {power_output_table_rows} rows on that table already, skipping this step")
+            con.close()
     else:
         raise e
 
 # COMMAND ----------
 
 try:
-    rs = engine.connect().execute(create_last_etl_table)
-    print(rs)
-    last_etl_table_rows = engine.connect().execute("select count(1) from dbo.etl_timestamp").fetchone()[0]
-    print(f"There are {last_etl_table_rows} rows on the table")
+    with engine.connect() as con:
+        rs = con.execute(text(create_last_etl_table))
+        con.commit()
+        last_etl_table_rows = [row for row in con.execute(text("select count(1) from dbo.etl_timestamp"))][0][0]
+        con.close()
+        print(f"There are {last_etl_table_rows} rows on the table")
 except Exception as e:
     if "[42S01] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]There is already an object named 'etl_timestamp' in the database." in str(e):
-        last_etl_table_rows = engine.connect().execute("select count(1) from dbo.etl_timestamp").fetchone()[0]
-        print(f"There are {last_etl_table_rows} rows on that table already, skipping this step")
+        with engine.connect() as con:
+            last_etl_table_rows = [row for row in con.execute(text("select count(1) from dbo.etl_timestamp").execution_options(autocommit=True))][0][0]
+            print(f"There are {last_etl_table_rows} rows on that table already, skipping this step")
+            con.close()
     else:
         raise e
 
@@ -159,8 +173,10 @@ if j != 0:
 
 if maintenance_header_table_rows < 980:
     for block in maintenance_block:
-        rs = engine.connect().execute(block)
-        print(rs)
+        with engine.connect() as con:
+            rs = con.execute(text(block))
+            con.commit()
+            con.close()
 
 # COMMAND ----------
 
@@ -191,8 +207,10 @@ if big_statement != "":
 
 # COMMAND ----------
 
-power_output_table_rows = engine.connect().execute("select count(1) from dbo.power_output").fetchone()[0]
-print(f"There are {power_output_table_rows} rows on the table")
+with engine.connect() as con:
+    power_output_table_rows = [row for row in con.execute(text("select count(1) from dbo.power_output"))][0][0]
+    print(f"There are {power_output_table_rows} rows on the table")
+    con.close()
 
 # COMMAND ----------
 
@@ -200,12 +218,15 @@ from time import sleep
 i = 0
 if power_output_table_rows == 0:
     print(f"{rows_to_insert} rows will be added to the table")
-    for statement in list_of_statements:
-        rs = engine.connect().execute(statement)
-        sleep(0.2)
-        i = i + 1
-        if (i % int(50) == 0):
-            print(f"{i} out of {len(list_of_statements)} blocks written")
+    with engine.connect() as con:
+        for statement in list_of_statements:
+            rs = con.execute(text(statement))
+            con.commit()
+            sleep(0.1)
+            i = i + 1
+            if (i % int(50) == 0):
+                print(f"{i} out of {len(list_of_statements)} blocks written")
+        con.close()
 print(f"{i} blocks were written to the database")
 
 # COMMAND ----------
@@ -213,13 +234,18 @@ print(f"{i} blocks were written to the database")
 last_etl_timestamp = datetime.strftime(datetime.now(), "%Y-%m-%dT%H:%M:%S.000")
 
 if last_etl_table_rows == 0:
-    rs = engine.connect().execute(f"""INSERT [dbo].[etl_timestamp] ([TableName], [LastETLRunTime]) VALUES (N'maintenance_header', CAST(N'{last_etl_timestamp}' AS DateTime));
-INSERT [dbo].[etl_timestamp] ([TableName], [LastETLRunTime]) VALUES (N'power_output', CAST(N'{last_etl_timestamp}' AS DateTime));""")
-    print(rs)
+    with engine.connect() as con:
+        rs = con.execute(text(f"""INSERT [dbo].[etl_timestamp] ([TableName], [LastETLRunTime]) VALUES (N'maintenance_header', CAST(N'{last_etl_timestamp}' AS DateTime));
+    INSERT [dbo].[etl_timestamp] ([TableName], [LastETLRunTime]) VALUES (N'power_output', CAST(N'{last_etl_timestamp}' AS DateTime));"""))
+        con.commit()
+        con.close()
 else:
     print("There were previous ETLs, updating timestamp...")
-    rs = engine.connect().execute(f"""DELETE FROM [dbo].[etl_timestamp] WHERE LastETLRunTime < '{last_etl_timestamp}';""")
-    rs = engine.connect().execute(f"""INSERT [dbo].[etl_timestamp] ([TableName], [LastETLRunTime]) VALUES (N'maintenance_header', CAST(N'{last_etl_timestamp}' AS DateTime));
-    INSERT [dbo].[etl_timestamp] ([TableName], [LastETLRunTime]) VALUES (N'power_output', CAST(N'{last_etl_timestamp}' AS DateTime));""")
-    last_etl_table_rows = engine.connect().execute("select count(1) from dbo.etl_timestamp").fetchone()[0]
-    print(f"There are {last_etl_table_rows} rows on that table now")
+    with engine.connect() as con:
+        rs = con.execute(text(f"""DELETE FROM [dbo].[etl_timestamp] WHERE LastETLRunTime < '{last_etl_timestamp}';"""))
+        rs = con.execute(text(f"""INSERT [dbo].[etl_timestamp] ([TableName], [LastETLRunTime]) VALUES (N'maintenance_header', CAST(N'{last_etl_timestamp}' AS DateTime));
+        INSERT [dbo].[etl_timestamp] ([TableName], [LastETLRunTime]) VALUES (N'power_output', CAST(N'{last_etl_timestamp}' AS DateTime));"""))
+        con.commit()
+        last_etl_table_rows = con.execute(text("select count(1) from dbo.etl_timestamp")).fetchone()[0]
+        print(f"There are {last_etl_table_rows} rows on that table now")
+    con.close()     
