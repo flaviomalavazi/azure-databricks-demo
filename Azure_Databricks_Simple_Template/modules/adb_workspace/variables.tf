@@ -49,9 +49,9 @@ resource "random_string" "suffix" {
 }
 
 locals {
-  resource_group_name       = var.prefix == null ? "${var.prefix}-rg" : "${random_string.suffix.result}-rg"
-  managed_rg                = var.prefix == null ? "${var.prefix}-mrg" : "${random_string.suffix.result}-mrg"
-  databricks_workspace_name = var.prefix == null ? "${var.prefix}-adb-workspace" : "${random_string.suffix.result}-adb-workspace"
-  storage_account_name      = var.prefix == null ? "adbadls${var.prefix}" : "adbadls${random_string.suffix.result}"
+  resource_group_name       = var.prefix != null ? "${var.prefix}-rg" : "${random_string.suffix.result}-rg"
+  managed_rg                = var.prefix != null ? "${var.prefix}-mrg" : "${random_string.suffix.result}-mrg"
+  databricks_workspace_name = var.prefix != null ? "${var.prefix}-adb-workspace" : "${random_string.suffix.result}-adb-workspace"
+  storage_account_name      = var.prefix != null ? "adbadls${var.prefix}" : "adbadls${random_string.suffix.result}"
   databricks_my_username    = data.external.me // Nome do usuário que será criado no workspace gerido pelo terraform
 }
