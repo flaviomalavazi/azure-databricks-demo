@@ -55,7 +55,8 @@ provider "azurerm" {
 provider "shell" {}
 
 provider "databricks" {
-  host = azurerm_databricks_workspace.databricks_demo_workspace.workspace_url
+  host      = azurerm_databricks_workspace.databricks_demo_workspace.workspace_url
+  auth_type = "azure-cli"
 }
 
 # Configure the Azure Active Directory Provider
