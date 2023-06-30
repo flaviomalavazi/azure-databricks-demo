@@ -18,21 +18,6 @@ resource "azurerm_mssql_server" "demo_sql_server" {
   tags = local.tags
 }
 
-// Fechando o SQL Server para IPs no seu range
-resource "azurerm_mssql_firewall_rule" "mssql_firewall_rule_allow_my_ip" {
-  name             = "AllowMyIpRange"
-  server_id        = azurerm_mssql_server.demo_sql_server.id
-  start_ip_address = var.my_ip_range[0]
-  end_ip_address   = var.my_ip_range[1]
-}
-
-resource "azurerm_mssql_firewall_rule" "mssql_firewall_rule_allow_my_ip_2" {
-  name             = "AllowMyIpRange"
-  server_id        = azurerm_mssql_server.demo_sql_server.id
-  start_ip_address = var.my_ip_range[2]
-  end_ip_address   = var.my_ip_range[3]
-}
-
 /* 
   Permitindo que recursos da própria Azure também acessem 
   o SQL Server - Isto é importante pois faremos a escrita dos dados 
